@@ -37,6 +37,7 @@ static struct ip_vs_timeout_user* ipvs_timeout;
 static struct ip_vs_daemon_user* ipvs_daemon;
 static struct Destination* ipvs_destination;
 static time_t last_setup;
+static struct ip_vs_get_dests** sentry_base = NULL;
 
 static
 void setup_snmp_ipvs(void)
@@ -44,7 +45,7 @@ void setup_snmp_ipvs(void)
 	int s, d;
 	struct Destination* mydestprev = NULL;
 	struct Destination* mydest = ipvs_destination;
-	struct ip_vs_get_dests* sentry;
+	struct ip_vs_get_dests **sentry;
 	
 	time(&last_setup);
 	if (ipvs_services) {
@@ -64,22 +65,36 @@ void setup_snmp_ipvs(void)
 	ipvs_timeout = ipvs_get_timeouts();
 #endif
 	ipvs_daemon = ipvs_get_daemon();
+
 	while (mydest) {
 		mydestprev = mydest;
 		mydest = mydest->next;
 		SNMP_FREE(mydestprev);
 	}
 	mydestprev = NULL;
+
+	/* NRC, 2010-05-18: Free old sentry structures... */
+	sentry = sentry_base;
+	if (sentry) {
+		while (*sentry) {
+			free(*sentry);
+			sentry++;
+		}
+		free(sentry_base);
+	}
+
+	sentry_base = calloc(ipvs_services->num_services + 1, sizeof(struct ip_vs_get_dests *));
 	for (s = 0; s<ipvs_services->num_services; s++) {
-		sentry = ipvs_get_dests(&ipvs_services->entrytable[s]);
-		for (d = 0; d<sentry->num_dests; d++) {
+		sentry = sentry_base + s;
+		*sentry = ipvs_get_dests(&ipvs_services->entrytable[s]);
+		for (d = 0; d < (*sentry)->num_dests; d++) {
 			mydest = SNMP_MALLOC_STRUCT(Destination);
 			if (mydestprev==NULL) {
 				ipvs_destination = mydest;
 			} else {
 				mydestprev->next = mydest;
 			}
-			mydest->dest_entry = &sentry->entrytable[d];
+			mydest->dest_entry = &(*sentry)->entrytable[d];
 			mydest->svc_index = s+1;
 			mydest->dst_index = d+1;
 			mydest->next = NULL;
@@ -243,7 +258,12 @@ int lvsServiceTable_handler(netsnmp_mib_handler* handler, netsnmp_handler_regist
 				snmp_set_var_typed_value(var, ASN_INTEGER, (u_char*)&tmp, sizeof(int));
 				break;
 			    case COLUMN_LVSSERVICEADDR:
-				snmp_set_var_typed_value(var, ASN_IPADDRESS, (u_char*) &entrytable->addr, sizeof(int));
+				if (entrytable->af == AF_INET) {
+					snmp_set_var_typed_value(var, ASN_IPADDRESS, (u_char*) &entrytable->addr.in, sizeof(entrytable->addr.in));
+				}
+				else if (entrytable->af == AF_INET6) {
+					snmp_set_var_typed_value(var, ASN_IPADDRESS, (u_char*) &entrytable->addr.in6, sizeof(entrytable->addr.in6));
+				}
 				break;
 			    case COLUMN_LVSSERVICEPORT:
 				tmp = htons(entrytable->port);
@@ -408,7 +428,12 @@ int lvsRealTable_handler(netsnmp_mib_handler* handler, netsnmp_handler_registrat
 				snmp_set_var_typed_value(var, ASN_INTEGER, (u_char*) &mydest->dst_index, sizeof(mydest->dst_index));
 				break;
 			    case COLUMN_LVSREALSERVERADDR:
-				snmp_set_var_typed_value(var, ASN_IPADDRESS, (u_char*) &destentry->addr, sizeof(destentry->addr));
+				if (destentry->af == AF_INET) {
+					snmp_set_var_typed_value(var, ASN_IPADDRESS, (u_char*) &destentry->addr.in, sizeof(destentry->addr.in));
+				}
+				else if (destentry->af == AF_INET6) {
+					snmp_set_var_typed_value(var, ASN_IPADDRESS, (u_char*) &destentry->addr.in6, sizeof(destentry->addr.in6));
+				}
 				break;
 			    case COLUMN_LVSREALSERVERPORT:
 				tmp = htons(destentry->port);
@@ -495,8 +520,7 @@ void init_lvs(void)
 	snmp_log(LOG_INFO, "IPVS initialization for ");
 	netsnmp_register_read_only_instance(netsnmp_create_handler_registration("lvsVersion", get_lvs_var, lvsVersion_oid, OID_LENGTH(lvsVersion_oid), HANDLER_CAN_RONLY));
 	netsnmp_register_read_only_instance(netsnmp_create_handler_registration("lvsNumServices", get_lvs_var, lvsNumServices_oid, OID_LENGTH(lvsNumServices_oid), HANDLER_CAN_RONLY));
-	netsnmp_register_read_only_instance(netsnmp_create_handler_registration("lvsNumServices", get_lvs_var, lvsHashTableSize_oid, OID_LENGTH(lvsHashTableSize_oid), HANDLER_CAN_RONLY));
-	netsnmp_register_read_only_instance(netsnmp_create_handler_registration("lvsNumServices", get_lvs_var, lvsHashTableSize_oid, OID_LENGTH(lvsHashTableSize_oid), HANDLER_CAN_RONLY));
+	netsnmp_register_read_only_instance(netsnmp_create_handler_registration("lvsHashTableSize", get_lvs_var, lvsHashTableSize_oid, OID_LENGTH(lvsHashTableSize_oid), HANDLER_CAN_RONLY));
 	netsnmp_register_read_only_instance(netsnmp_create_handler_registration("lvsTcpTimeOut", get_lvs_var, lvsTcpTimeOut_oid, OID_LENGTH(lvsTcpTimeOut_oid), HANDLER_CAN_RONLY));
 	netsnmp_register_read_only_instance(netsnmp_create_handler_registration("lvsTcpTimeOutFin", get_lvs_var, lvsTcpTimeOutFin_oid, OID_LENGTH(lvsTcpTimeOutFin_oid), HANDLER_CAN_RONLY));
 	netsnmp_register_read_only_instance(netsnmp_create_handler_registration("lvsUdpTimeOut", get_lvs_var, lvsUdpTimeOut_oid, OID_LENGTH(lvsUdpTimeOut_oid), HANDLER_CAN_RONLY));
