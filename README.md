@@ -1,9 +1,14 @@
-GENERAL
+#net-snmpd-lvs-module
+
+##GENERAL
 net-snmpd-lvs-module is a dynamicaly loadable shared object to get the
 configuration and some statistical information from the Linux kernel
 with IP virtual server support (also known as Linux Virtual Server).
 
-INSTALLATION
+##Prerequisites
+libnl3-devel
+
+##INSTALLATION
 From http://www.linuxvirtualserver.org/software/ipvs.html download the
 the correct version of ipvsadm, for kernel 2.6 use ipvsadm-1.24 or later,
 for kernel 2.4 use ipvsadm-1.21. Extract ipvsadm-<version>.tar.gz, build
@@ -18,9 +23,9 @@ shell> snmptranslate -m LVS-MIB -On -IR lvsServiceEntry,
 this should return .1.3.6.1.4.1.8225.4711.18.1
 Copy lvs.so to /usr/lib/libnetsnmplvs.so and add the following line to 
 /etc/snmp/snmpd.conf:
----------------------------------------
+
 dlmod lvs /usr/lib/libnetsnmplvs.so
----------------------------------------
+
 Restart your snmpd.
 Try if everything works invoking:
 shell> snmpwalk -c public -v 2c -m LVS-MIB localhost 1.3.6.1.4.1.8225.4711
@@ -41,17 +46,17 @@ shell> mib2c -c mib2c.interate.conf lvsServiceTable
 this should create a file lvsRealTable.c and/or lvsServiceTable.c.
 Use the generated code as a template for lvs.c and populate the missing parts.
 
-CREDITS
+##CREDITS
 The code for this module is based on ucd-snmpd-lvs written by Romeo Benzoni in
 2002 and never modified since. As that code did not compile with the newer
 net-snmp headers, I decided to rewrite the complete code. The only unchanged
 parts from the ucd-snmpd-lvs project are LVS-MIB.txt and OC.txt.
 
-AUTHOR
+#AUTHOR
 Jacob Rief <jacob.rief@tiscover.com>
 Jan, 2nd 2006
 
-LICENSE
+##LICENSE
 This program is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
 the Free Software Foundation; either version 2 of the License, or
