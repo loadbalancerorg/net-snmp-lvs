@@ -49,12 +49,15 @@ Use the generated code as a template for lvs.c and populate the missing parts.
 ## CREDITS
 The code for this module is based on ucd-snmpd-lvs written by Romeo Benzoni in
 2002 and never modified since. As that code did not compile with the newer
-net-snmp headers, I decided to rewrite the complete code. The only unchanged
+net-snmp headers, Jacob decided to rewrite the complete code. The only unchanged
 parts from the ucd-snmpd-lvs project are LVS-MIB.txt and OC.txt.
+It has since been updated with a few bug fixes and to build with newer versions of LVS.
 
-# AUTHOR
+## AUTHOR
 Jacob Rief <jacob.rief@tiscover.com>
 Jan, 2nd 2006
+
+Ben Cabot <ben@loadbalancer.org> Jan, 5th 2018
 
 ## LICENSE
 This program is free software; you can redistribute it and/or modify
