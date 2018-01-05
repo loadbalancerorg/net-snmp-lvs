@@ -5,7 +5,7 @@ net-snmpd-lvs-module is a dynamicaly loadable shared object to get the
 configuration and some statistical information from the Linux kernel
 with IP virtual server support (also known as Linux Virtual Server).
 
-## Prerequisites
+## PREREQUISITES
 libnl3-devel
 
 ## INSTALLATION
