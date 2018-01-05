@@ -72,6 +72,7 @@ void setup_snmp_ipvs(void)
 		SNMP_FREE(mydestprev);
 	}
 	mydestprev = NULL;
+        ipvs_destination = NULL;
 
 	/* NRC, 2010-05-18: Free old sentry structures... */
 	sentry = sentry_base;
