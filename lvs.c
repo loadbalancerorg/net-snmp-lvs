@@ -292,11 +292,23 @@ int lvsServiceTable_handler(netsnmp_mib_handler* handler, netsnmp_handler_regist
 				snmp_set_var_typed_value(var, ASN_COUNTER, (u_char *) &stats->outpkts, sizeof(stats->outpkts));
 				break;
 			    case COLUMN_LVSSERVICESTATSINBYTES:
-				snmp_set_var_typed_value(var, ASN_COUNTER64, (u_char *) &stats->inbytes, sizeof(stats->inbytes));
-				break;
+				{
+					struct counter64 c64 = {
+						.high = (stats->inbytes >> 32) & 0xffffffff,
+						.low  = (stats->inbytes      ) & 0xffffffff
+					};
+					snmp_set_var_typed_value(var, ASN_COUNTER64, (u_char *) &c64, sizeof(c64));
+					break;
+				}
 			    case COLUMN_LVSSERVICESTATSOUTBYTES:
-				snmp_set_var_typed_value(var, ASN_COUNTER64, (u_char *)&stats->outbytes, sizeof(stats->outbytes));
-				break;
+				{
+					struct counter64 c64 = {
+						.high = (stats->outbytes >> 32) & 0xffffffff,
+						.low  = (stats->outbytes      ) & 0xffffffff
+					};
+					snmp_set_var_typed_value(var, ASN_COUNTER64, (u_char *)&c64, sizeof(c64));
+					break;
+				}
 			    case COLUMN_LVSSERVICERATECPS:
 				snmp_set_var_typed_value(var, ASN_GAUGE, (u_char *) &stats->cps, sizeof(stats->cps));
 				break;
