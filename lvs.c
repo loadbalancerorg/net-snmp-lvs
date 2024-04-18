@@ -472,11 +472,23 @@ int lvsRealTable_handler(netsnmp_mib_handler* handler, netsnmp_handler_registrat
 				snmp_set_var_typed_value(var, ASN_COUNTER, (u_char *) &stats->outpkts, sizeof(stats->outpkts) );
 				break;
 			    case COLUMN_LVSREALSTATSINBYTES:
-				snmp_set_var_typed_value(var, ASN_COUNTER64, (u_char *) &stats->inbytes, sizeof(stats->inbytes));
-				break;
+				{
+					struct counter64 c64 = {
+						.high = (stats->inbytes >> 32) & 0xffffffff,
+						.low  = (stats->inbytes      ) & 0xffffffff
+					};
+					snmp_set_var_typed_value(var, ASN_COUNTER64, (u_char *) &c64, sizeof(c64));
+					break;
+				}
 			    case COLUMN_LVSREALSTATSOUTBYTES:
-				snmp_set_var_typed_value(var, ASN_COUNTER64, (u_char *) &stats->outbytes, sizeof(stats->outbytes));
-				break;
+				{
+					struct counter64 c64 = {
+						.high = (stats->outbytes >> 32) & 0xffffffff,
+						.low  = (stats->outbytes      ) & 0xffffffff
+					};
+					snmp_set_var_typed_value(var, ASN_COUNTER64, (u_char *) &c64, sizeof(c64));
+					break;
+				}
 			    case COLUMN_LVSREALRATECPS:
 				snmp_set_var_typed_value(var, ASN_GAUGE, (u_char *) &stats->cps, sizeof(stats->cps));
 				break;
